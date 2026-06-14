@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>复利计算器 — 定投收益/72法则 在线计算</title>
+    <meta name="description" content="免费在线复利计算器，支持定投收益计算和72法则。计算投资复利增长，查看资产翻倍时间。">
+    <meta name="keywords" content="复利计算器,定投计算器,72法则,投资收益计算器,复利增长,基金定投计算">
+    <link rel="canonical" href="https://countin1.github.io/interest-calculator/compound/">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <a href="../" class="back-link">&larr; 返回计算器大全</a>
+    <div class="container">
+        <h1>&#x1f4c8; 复利计算器</h1>
+        <p class="subtitle">复利增长 / 定投收益 / 72法则</p>
+
+        <div class="tabs">
+            <div class="tab active" data-mode="lump" onclick="switchTab(this)">一次性投入</div>
+            <div class="tab" data-mode="dca" onclick="switchTab(this)">定投</div>
+            <div class="tab" data-mode="rule72" onclick="switchTab(this)">72法则</div>
+        </div>
+
+        <div class="form-group">
+            <label id="principalLabel">初始本金（元）</label>
+            <input type="number" id="principal" placeholder="如 100000" min="0" step="1000">
+        </div>
+        <div class="form-group" id="monthlyGroup" style="display:none">
+            <label>每月定投（元）</label>
+            <input type="number" id="monthly" placeholder="如 2000" min="0" step="100">
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>年化收益率（%）</label>
+                <input type="number" id="rate" placeholder="如 8" min="0" step="0.5" value="8">
+            </div>
+            <div class="form-group">
+                <label>投资年限（年）</label>
+                <input type="number" id="years" placeholder="如 10" min="1" max="50" step="1" value="10">
+            </div>
+        </div>
+
+        <button class="btn" onclick="calculate()">计算收益</button>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-title">计算结果</div>
+            <div class="result-main">
+                <div>
+                    <div class="label" id="finalLabel">到期总额</div>
+                    <div class="amount" id="finalAmount">¥0.00</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="label">总收益</div>
+                    <div class="amount" id="totalGain" style="font-size:22px;color:#764ba2">¥0.00</div>
+                </div>
+            </div>
+            <div class="result-details" id="resultDetails"></div>
+            <div class="schedule-toggle" id="scheduleToggle" style="display:none">
+                <a onclick="toggleSchedule()">&#x1f4ca; 查看逐年增长明细 &#x25bc;</a>
+            </div>
+            <div class="schedule-table" id="scheduleTable"></div>
+        </div>
+    </div>
+
+    <script>
+        var mode = 'lump';
+        function switchTab(el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            mode = el.dataset.mode;
+            document.getElementById('monthlyGroup').style.display = mode === 'dca' ? '' : 'none';
+            document.getElementById('principalLabel').textContent = mode === 'dca' ? '初始本金（元，可填0）' : '初始本金（元）';
+            document.getElementById('resultBox').classList.remove('show');
+        }
+
+        function fmt(n) { return '¥' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+        function fmtInt(n) { return '¥' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+        function calculate() {
+            var principal = parseFloat(document.getElementById('principal').value) || 0;
+            var monthly = parseFloat(document.getElementById('monthly').value) || 0;
+            var rate = parseFloat(document.getElementById('rate').value) / 100;
+            var years = parseInt(document.getElementById('years').value);
+
+            if (mode === 'rule72') {
+                if (!rate) { alert('请输入年化收益率'); return; }
+                var doubleYears = 72 / (rate * 100);
+                document.getElementById('finalLabel').textContent = '翻倍年数';
+                document.getElementById('finalAmount').textContent = doubleYears.toFixed(1) + ' 年';
+                document.getElementById('totalGain').textContent = '72 ÷ ' + (rate*100).toFixed(1) + '%';
+
+                var details = '';
+                for (var i = 1; i <= 5; i++) {
+                    var amount = principal * Math.pow(1 + rate, doubleYears * i);
+                    details += '<div class="detail-item"><div class="val">' + (Math.pow(2,i)) + '倍</div><div class="lbl">第' + i + '次翻倍约' + (doubleYears*i).toFixed(1) + '年</div></div>';
+                }
+                document.getElementById('resultDetails').innerHTML = details;
+                document.getElementById('scheduleToggle').style.display = 'none';
+                document.getElementById('resultBox').classList.add('show');
+                return;
+            }
+
+            if (!principal && !monthly) { alert('请输入本金或定投金额'); return; }
+            if (!rate || !years) { alert('请输入收益率和年限'); return; }
+
+            var mr = rate / 12;
+            var totalMonths = years * 12;
+            var totalInvested = principal + monthly * totalMonths;
+
+            // 逐年计算
+            var rows = '';
+            var balance = principal;
+            for (var y = 1; y <= years; y++) {
+                for (var m = 0; m < 12; m++) {
+                    balance = balance * (1 + mr) + monthly;
+                }
+                var invested = principal + monthly * 12 * y;
+                var gain = balance - invested;
+                rows += '<tr><td>' + y + '</td><td>' + fmtInt(invested) + '</td><td>' + fmt(balance) + '</td><td>' + fmt(gain) + '</td><td>' + (gain/invested*100).toFixed(1) + '%</td></tr>';
+            }
+
+            var totalGain = balance - totalInvested;
+            document.getElementById('finalLabel').textContent = '到期总额';
+            document.getElementById('finalAmount').textContent = fmt(balance);
+            document.getElementById('totalGain').textContent = fmt(totalGain);
+
+            var details =
+                '<div class="detail-item"><div class="val">' + fmtInt(totalInvested) + '</div><div class="lbl">总投入</div></div>' +
+                '<div class="detail-item"><div class="val">' + fmt(totalGain) + '</div><div class="lbl">总收益</div></div>' +
+                '<div class="detail-item"><div class="val">' + (totalGain/totalInvested*100).toFixed(1) + '%</div><div class="lbl">收益率</div></div>' +
+                '<div class="detail-item"><div class="val">' + (balance/totalInvested).toFixed(2) + '倍</div><div class="lbl">资产倍数</div></div>';
+            document.getElementById('resultDetails').innerHTML = details;
+
+            document.getElementById('scheduleTable').innerHTML =
+                '<table><thead><tr><th>年份</th><th>累计投入</th><th>账户总额</th><th>累计收益</th><th>收益率</th></tr></thead><tbody>' + rows + '</tbody></table>';
+            document.getElementById('scheduleToggle').style.display = '';
+            document.getElementById('resultBox').classList.add('show');
+        }
+
+        function toggleSchedule() {
+            var t = document.getElementById('scheduleTable'), a = document.querySelector('.schedule-toggle a');
+            t.classList.toggle('show');
+            a.textContent = t.classList.contains('show') ? '\u{1f4ca} 收起增长明细 ▲' : '\u{1f4ca} 查看逐年增长明细 ▼';
+        }
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
+    </script>
+</body>
+</html>

@@ -3,307 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>利息计算器 — 单利/复利/等额本息 在线计算</title>
-    <meta name="description" content="免费在线利息计算器，支持单利、复利、等额本息三种计算方式，自动生成还款计划明细表。适用于存款、贷款、房贷、车贷等场景。">
-    <meta name="keywords" content="利息计算器,贷款计算器,房贷计算器,复利计算器,等额本息计算器,还款计划,利率计算,车贷计算器">
-    <meta name="author" content="countin1">
+    <title>在线计算器大全 — 房贷/车贷/利息/个税/复利 免费计算</title>
+    <meta name="description" content="免费在线计算器大全，包含房贷计算器、车贷计算器、利息计算器、个税计算器、复利计算器、存款利率对比。支持等额本息/等额本金还款方式，自动生成还款计划表。">
+    <meta name="keywords" content="房贷计算器,车贷计算器,利息计算器,个税计算器,复利计算器,存款利率,还款计算器,贷款计算器,等额本息,等额本金">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://countin1.github.io/interest-calculator/">
-
-    <!-- Open Graph -->
-    <meta property="og:title" content="利息计算器 — 单利/复利/等额本息 在线计算">
-    <meta property="og:description" content="免费在线利息计算器，支持单利、复利、等额本息三种计算方式，自动生成还款计划明细表。">
+    <meta property="og:title" content="在线计算器大全 — 房贷/车贷/利息/个税/复利 免费计算">
+    <meta property="og:description" content="免费在线计算器大全，支持房贷、车贷、利息、个税、复利等多种计算。">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://countin1.github.io/interest-calculator/">
-    <meta property="og:locale" content="zh_CN">
-
-    <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "利息计算器",
-        "description": "免费在线利息计算器，支持单利、复利、等额本息三种计算方式",
-        "url": "https://countin1.github.io/interest-calculator/",
-        "applicationCategory": "FinanceApplication",
-        "operatingSystem": "Web Browser",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" }
-    }
+    {"@context":"https://schema.org","@type":"WebSite","name":"在线计算器大全","url":"https://countin1.github.io/interest-calculator/","description":"免费在线计算器大全"}
     </script>
-
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
+        .calc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 20px;
         }
-        .container {
+        .calc-card {
+            background: white;
+            border-radius: 14px;
+            padding: 24px 16px;
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .calc-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .calc-card .icon { font-size: 36px; margin-bottom: 8px; }
+        .calc-card .name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .calc-card .desc { font-size: 12px; color: #999; }
+        .hero-title { font-size: 32px; color: white; text-align: center; margin-bottom: 8px; }
+        .hero-sub { color: rgba(255,255,255,0.7); text-align: center; margin-bottom: 32px; font-size: 16px; }
+        .seo-section {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 40px;
+            padding: 30px;
+            margin-top: 24px;
+            max-width: 680px;
             width: 100%;
-            max-width: 520px;
+            line-height: 1.8;
+            color: #555;
+            font-size: 14px;
         }
-        h1 { text-align: center; color: #333; margin-bottom: 8px; font-size: 28px; }
-        .subtitle { text-align: center; color: #999; font-size: 14px; margin-bottom: 30px; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
-        .tab {
-            flex: 1; padding: 10px; text-align: center;
-            border: 2px solid #e0e0e0; border-radius: 10px;
-            cursor: pointer; font-size: 14px; font-weight: 600;
-            color: #666; transition: all 0.3s; background: #fafafa;
-        }
-        .tab.active { border-color: #667eea; color: #667eea; background: #f0f2ff; }
-        .tab:hover:not(.active) { border-color: #bbb; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; color: #444; font-size: 14px; }
-        input, select {
-            width: 100%; padding: 12px 16px;
-            border: 2px solid #e0e0e0; border-radius: 10px;
-            font-size: 16px; transition: border-color 0.3s; outline: none;
-        }
-        input:focus, select:focus { border-color: #667eea; }
-        .row { display: flex; gap: 12px; }
-        .row .form-group { flex: 1; }
-        .btn {
-            width: 100%; padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; border: none; border-radius: 10px;
-            font-size: 16px; font-weight: 600; cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s; margin-top: 10px;
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.4); }
-        .btn:active { transform: translateY(0); }
-        .result-box {
-            display: none; margin-top: 24px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 14px; padding: 24px;
-        }
-        .result-box.show { display: block; }
-        .result-title { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-        .result-main { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
-        .result-main .amount { font-size: 32px; font-weight: 700; color: #333; }
-        .result-main .label { font-size: 13px; color: #666; }
-        .result-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .detail-item { background: white; border-radius: 10px; padding: 12px; }
-        .detail-item .val { font-size: 18px; font-weight: 700; color: #667eea; }
-        .detail-item .lbl { font-size: 12px; color: #999; margin-top: 2px; }
-        .schedule-toggle { text-align: center; margin-top: 16px; }
-        .schedule-toggle a { color: #667eea; text-decoration: none; font-size: 14px; cursor: pointer; }
-        .schedule-toggle a:hover { text-decoration: underline; }
-        .schedule-table { display: none; margin-top: 16px; max-height: 300px; overflow-y: auto; }
-        .schedule-table.show { display: block; }
-        .schedule-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .schedule-table th {
-            background: #667eea; color: white; padding: 8px 6px;
-            text-align: right; position: sticky; top: 0;
-        }
-        .schedule-table th:first-child { text-align: center; }
-        .schedule-table td { padding: 7px 6px; text-align: right; border-bottom: 1px solid #eee; }
-        .schedule-table td:first-child { text-align: center; }
-        .schedule-table tr:hover td { background: #f8f9ff; }
-        .seo-content {
-            max-width: 520px; width: 100%; margin-top: 24px;
-            color: rgba(255,255,255,0.85); font-size: 14px; line-height: 1.8;
-        }
-        .seo-content h2 { font-size: 18px; margin: 16px 0 8px; color: white; }
-        .seo-content p { margin-bottom: 8px; }
-        footer { margin-top: 32px; color: rgba(255,255,255,0.5); font-size: 12px; }
+        .seo-section h2 { color: #333; font-size: 20px; margin: 20px 0 10px; }
+        .seo-section h2:first-child { margin-top: 0; }
+        .seo-section p { margin-bottom: 8px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>&#x1f4b0; 利息计算器</h1>
-        <p class="subtitle">支持单利、复利、等额本息等多种计算方式</p>
+    <h1 class="hero-title">&#x1f4b0; 在线计算器大全</h1>
+    <p class="hero-sub">房贷 / 车贷 / 利息 / 个税 / 复利 / 存款 — 免费计算</p>
 
-        <div class="tabs">
-            <div class="tab active" data-mode="simple" onclick="switchTab(this)">单利</div>
-            <div class="tab" data-mode="compound" onclick="switchTab(this)">复利</div>
-            <div class="tab" data-mode="equal" onclick="switchTab(this)">等额本息</div>
-        </div>
-
-        <div class="form-group">
-            <label>本金（元）</label>
-            <input type="number" id="principal" placeholder="请输入本金" min="0" step="any">
-        </div>
-
-        <div class="row">
-            <div class="form-group">
-                <label>年利率（%）</label>
-                <input type="number" id="rate" placeholder="如 3.5" min="0" step="any">
-            </div>
-            <div class="form-group">
-                <label>期限</label>
-                <input type="number" id="period" placeholder="如 3" min="1" step="1">
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="form-group">
-                <label>期限单位</label>
-                <select id="periodUnit">
-                    <option value="year">年</option>
-                    <option value="month">月</option>
-                    <option value="day">天</option>
-                </select>
-            </div>
-            <div class="form-group" id="compoundFreqGroup">
-                <label>复利频率</label>
-                <select id="compoundFreq">
-                    <option value="1">每年</option>
-                    <option value="2">每半年</option>
-                    <option value="4">每季度</option>
-                    <option value="12">每月</option>
-                </select>
-            </div>
-        </div>
-
-        <button class="btn" onclick="calculate()">计算利息</button>
-
-        <div class="result-box" id="resultBox">
-            <div class="result-title">计算结果</div>
-            <div class="result-main">
-                <div>
-                    <div class="label" id="resultLabel">利息总额</div>
-                    <div class="amount" id="resultAmount">&#xa5;0.00</div>
-                </div>
-                <div style="text-align:right">
-                    <div class="label">到期总额</div>
-                    <div class="amount" id="resultTotal" style="font-size:22px;color:#764ba2">&#xa5;0.00</div>
-                </div>
-            </div>
-            <div class="result-details" id="resultDetails"></div>
-            <div class="schedule-toggle" id="scheduleToggle" style="display:none">
-                <a onclick="toggleSchedule()">&#x1f4ca; 查看还款计划明细 &#x25bc;</a>
-            </div>
-            <div class="schedule-table" id="scheduleTable"></div>
-        </div>
+    <div class="calc-grid">
+        <a href="mortgage/" class="calc-card">
+            <div class="icon">&#x1f3e0;</div>
+            <div class="name">房贷计算器</div>
+            <div class="desc">等额本息 / 等额本金</div>
+        </a>
+        <a href="car-loan/" class="calc-card">
+            <div class="icon">&#x1f697;</div>
+            <div class="name">车贷计算器</div>
+            <div class="desc">月供 / 总利息 / 还款表</div>
+        </a>
+        <a href="interest/" class="calc-card">
+            <div class="icon">&#x1f4b0;</div>
+            <div class="name">利息计算器</div>
+            <div class="desc">单利 / 复利 / 等额本息</div>
+        </a>
+        <a href="income-tax/" class="calc-card">
+            <div class="icon">&#x1f4b8;</div>
+            <div class="name">个税计算器</div>
+            <div class="desc">2024 新税率 / 五险一金</div>
+        </a>
+        <a href="compound/" class="calc-card">
+            <div class="icon">&#x1f4c8;</div>
+            <div class="name">复利计算器</div>
+            <div class="desc">定投收益 / 72 法则</div>
+        </a>
+        <a href="deposit/" class="calc-card">
+            <div class="icon">&#x1f3e6;</div>
+            <div class="name">存款利率对比</div>
+            <div class="desc">各银行利率 / 收益对比</div>
+        </a>
     </div>
 
-    <div class="seo-content">
-        <h2>利息计算器使用说明</h2>
-        <p><strong>单利计算：</strong>利息 = 本金 x 年利率 x 年数。适用于定期存款、国债等固定收益产品。</p>
-        <p><strong>复利计算：</strong>支持按年、半年、季度、月复利。适用于理财产品、基金定投等复利场景。</p>
-        <p><strong>等额本息：</strong>每月还款金额固定，适用于房贷、车贷、消费贷等分期还款场景。可查看完整还款计划表。</p>
+    <div class="seo-section">
+        <h2>房贷计算器使用说明</h2>
+        <p>支持等额本息和等额本金两种还款方式。等额本息每月还款金额固定，适合收入稳定的借款人；等额本金每月递减，前期还款压力大但总利息更少。输入贷款金额、利率和期限，即可查看每月还款明细和总利息。</p>
 
-        <h2>常见利率参考</h2>
-        <p>2024年房贷利率：约 3.0%-3.5%（LPR）</p>
-        <p>银行定期存款：1年约 1.5%，3年约 2.0%，5年约 2.0%</p>
-        <p>公积金贷款：约 2.85%</p>
+        <h2>车贷计算器</h2>
+        <p>计算汽车贷款的月供和总利息。支持自定义首付比例，帮助您规划购车预算。大部分银行车贷利率在 3%-6% 之间。</p>
 
-        <h2>公式说明</h2>
-        <p><strong>单利公式：</strong>A = P x (1 + r x t)</p>
-        <p><strong>复利公式：</strong>A = P x (1 + r/n)^(n x t)</p>
-        <p><strong>等额本息月供：</strong>M = P x r x (1+r)^n / ((1+r)^n - 1)</p>
-        <p>其中 P=本金，r=年利率，t=年数，n=复利频率，M=月供</p>
+        <h2>个税计算器</h2>
+        <p>按照 2024 年最新个人所得税税率计算。支持五险一金扣除、专项附加扣除（子女教育、住房贷款、赡养老人等）。输入税前工资即可查看到手工资和个税金额。</p>
+
+        <h2>复利计算器</h2>
+        <p>计算投资的复利收益，支持定投（定期定额投入）场景。72 法则：用 72 除以年利率，即可估算本金翻倍所需年数。例如年化 6%，约 12 年翻倍。</p>
+
+        <h2>存款利率对比</h2>
+        <p>对比各大银行的定期存款利率，计算不同期限的存款收益。帮助您选择最优存款方案。</p>
     </div>
 
-    <footer>&copy; 2024 利息计算器 — 免费在线计算工具</footer>
-
-    <script>
-        let currentMode = 'simple';
-
-        function switchTab(el) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            el.classList.add('active');
-            currentMode = el.dataset.mode;
-            document.getElementById('compoundFreqGroup').style.display = currentMode === 'compound' ? '' : 'none';
-            document.getElementById('resultBox').classList.remove('show');
-        }
-
-        function getYears() {
-            const period = parseFloat(document.getElementById('period').value);
-            const unit = document.getElementById('periodUnit').value;
-            if (unit === 'year') return period;
-            if (unit === 'month') return period / 12;
-            return period / 365;
-        }
-
-        function formatMoney(n) {
-            return '¥' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        }
-
-        function calculate() {
-            const principal = parseFloat(document.getElementById('principal').value);
-            const annualRate = parseFloat(document.getElementById('rate').value) / 100;
-            const years = getYears();
-            const period = parseFloat(document.getElementById('period').value);
-            const unit = document.getElementById('periodUnit').value;
-
-            if (!principal || !annualRate || !period) { alert('请填写完整信息'); return; }
-
-            let interest, total, details = '';
-
-            if (currentMode === 'simple') {
-                interest = principal * annualRate * years;
-                total = principal + interest;
-                details =
-                    '<div class="detail-item"><div class="val">' + (annualRate*100).toFixed(2) + '%</div><div class="lbl">年利率</div></div>' +
-                    '<div class="detail-item"><div class="val">' + years.toFixed(2) + ' 年</div><div class="lbl">实际期限</div></div>' +
-                    '<div class="detail-item"><div class="val">' + formatMoney(interest/years||0) + '</div><div class="lbl">年利息</div></div>' +
-                    '<div class="detail-item"><div class="val">' + formatMoney(interest/(years*12)||0) + '</div><div class="lbl">月利息</div></div>';
-                document.getElementById('resultLabel').textContent = '利息总额';
-                document.getElementById('scheduleToggle').style.display = 'none';
-                document.getElementById('scheduleTable').classList.remove('show');
-            } else if (currentMode === 'compound') {
-                const n = parseInt(document.getElementById('compoundFreq').value);
-                total = principal * Math.pow(1 + annualRate/n, n*years);
-                interest = total - principal;
-                var freqNames = {1:'每年',2:'每半年',4:'每季度',12:'每月'};
-                details =
-                    '<div class="detail-item"><div class="val">' + (annualRate*100).toFixed(2) + '%</div><div class="lbl">年利率</div></div>' +
-                    '<div class="detail-item"><div class="val">' + freqNames[n] + '</div><div class="lbl">复利频率</div></div>' +
-                    '<div class="detail-item"><div class="val">' + years.toFixed(2) + ' 年</div><div class="lbl">实际期限</div></div>' +
-                    '<div class="detail-item"><div class="val">' + (Math.pow(1+annualRate/n,n)*100-100).toFixed(4) + '%</div><div class="lbl">实际年化</div></div>';
-                document.getElementById('resultLabel').textContent = '利息总额';
-                document.getElementById('scheduleToggle').style.display = 'none';
-                document.getElementById('scheduleTable').classList.remove('show');
-            } else {
-                var totalMonths = unit==='year'?period*12:unit==='month'?period:period/30;
-                var monthlyRate = annualRate/12;
-                var m = Math.round(totalMonths);
-                var mp = monthlyRate===0 ? principal/m : principal*monthlyRate*Math.pow(1+monthlyRate,m)/(Math.pow(1+monthlyRate,m)-1);
-                total = mp * m;
-                interest = total - principal;
-
-                var rows = '', remaining = principal;
-                for (var i = 1; i <= m; i++) {
-                    var ip = remaining * monthlyRate;
-                    var pp = mp - ip;
-                    remaining = Math.max(0, remaining - pp);
-                    rows += '<tr><td>' + i + '</td><td>' + formatMoney(mp) + '</td><td>' + formatMoney(ip) + '</td><td>' + formatMoney(pp) + '</td><td>' + formatMoney(remaining) + '</td></tr>';
-                }
-                document.getElementById('scheduleTable').innerHTML = '<table><thead><tr><th>期数</th><th>月供</th><th>利息</th><th>本金</th><th>剩余本金</th></tr></thead><tbody>' + rows + '</tbody></table>';
-
-                details =
-                    '<div class="detail-item"><div class="val">' + formatMoney(mp) + '</div><div class="lbl">每月还款</div></div>' +
-                    '<div class="detail-item"><div class="val">' + m + ' 期</div><div class="lbl">还款期数</div></div>' +
-                    '<div class="detail-item"><div class="val">' + formatMoney(interest) + '</div><div class="lbl">总利息</div></div>' +
-                    '<div class="detail-item"><div class="val">' + (interest/principal*100).toFixed(2) + '%</div><div class="lbl">利息占比</div></div>';
-                document.getElementById('resultLabel').textContent = '总利息';
-                document.getElementById('scheduleToggle').style.display = '';
-            }
-
-            document.getElementById('resultAmount').textContent = formatMoney(interest);
-            document.getElementById('resultTotal').textContent = formatMoney(total);
-            document.getElementById('resultDetails').innerHTML = details;
-            document.getElementById('resultBox').classList.add('show');
-        }
-
-        function toggleSchedule() {
-            var table = document.getElementById('scheduleTable');
-            var toggle = document.querySelector('.schedule-toggle a');
-            table.classList.toggle('show');
-            toggle.textContent = table.classList.contains('show') ? '\u{1f4ca} 收起还款计划 ▲' : '\u{1f4ca} 查看还款计划明细 ▼';
-        }
-
-        document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
-    </script>
+    <footer>&copy; 2024 在线计算器大全 — 免费计算工具</footer>
 </body>
 </html>

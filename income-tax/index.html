@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个税计算器 — 2024年个人所得税 在线计算</title>
+    <meta name="description" content="免费在线个税计算器，按照2024年最新税率计算个人所得税。支持五险一金扣除和专项附加扣除，输入税前工资即可查看到手工资。">
+    <meta name="keywords" content="个税计算器,个人所得税计算器,工资计算器,到手工资,五险一金计算器,个税起征点">
+    <link rel="canonical" href="https://countin1.github.io/interest-calculator/income-tax/">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .tax-rate-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+        .tax-rate-table th { background: #667eea; color: white; padding: 8px; text-align: center; }
+        .tax-rate-table td { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: center; }
+    </style>
+</head>
+<body>
+    <a href="../" class="back-link">&larr; 返回计算器大全</a>
+    <div class="container">
+        <h1>&#x1f4b8; 个税计算器</h1>
+        <p class="subtitle">2024年最新税率 — 输入税前工资计算到手收入</p>
+
+        <div class="form-group">
+            <label>税前月薪（元）</label>
+            <input type="number" id="salary" placeholder="如 15000" min="0" step="100">
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>五险一金（元/月）</label>
+                <input type="number" id="insurance" placeholder="如 2000" min="0" step="100" value="0">
+            </div>
+            <div class="form-group">
+                <label>专项附加扣除（元/月）</label>
+                <input type="number" id="special" placeholder="如 3000" min="0" step="500" value="0">
+            </div>
+        </div>
+
+        <div style="background:#f8f9ff;border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px;color:#555">
+            <strong>专项附加扣除说明：</strong><br>
+            子女教育：1000-2000元/月 | 继续教育：400元/月<br>
+            住房贷款：1000元/月 | 住房租金：800-1500元/月<br>
+            赡养老人：1500-3000元/月 | 3岁以下婴幼儿：1000-2000元/月
+        </div>
+
+        <button class="btn" onclick="calculate()">计算个税</button>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-title">计算结果</div>
+            <div class="result-main">
+                <div>
+                    <div class="label">每月到手工资</div>
+                    <div class="amount" id="takeHome">¥0.00</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="label">每月个税</div>
+                    <div class="amount" id="taxAmount" style="font-size:22px;color:#764ba2">¥0.00</div>
+                </div>
+            </div>
+            <div class="result-details" id="resultDetails"></div>
+
+            <div style="margin-top:20px">
+                <div class="label" style="margin-bottom:8px;font-weight:600">全年累计（12个月）</div>
+                <div class="result-details">
+                    <div class="detail-item"><div class="val" id="yearSalary">¥0</div><div class="lbl">税前年薪</div></div>
+                    <div class="detail-item"><div class="val" id="yearTax">¥0</div><div class="lbl">全年个税</div></div>
+                    <div class="detail-item"><div class="val" id="yearTakeHome">¥0</div><div class="lbl">到手年薪</div></div>
+                    <div class="detail-item"><div class="val" id="taxRate">0%</div><div class="lbl">实际税率</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 2024年个税税率表（累计预扣预缴）
+        var TAX_BRACKETS = [
+            { min: 0,     max: 36000,   rate: 0.03, deduction: 0 },
+            { min: 36000, max: 144000,  rate: 0.10, deduction: 2520 },
+            { min: 144000,max: 300000,  rate: 0.20, deduction: 16920 },
+            { min: 300000,max: 420000,  rate: 0.25, deduction: 31920 },
+            { min: 420000,max: 660000,  rate: 0.30, deduction: 52920 },
+            { min: 660000,max: 960000,  rate: 0.35, deduction: 85920 },
+            { min: 960000,max: Infinity,rate: 0.45, deduction: 181920 }
+        ];
+        var THRESHOLD = 5000; // 起征点
+
+        function fmt(n) { return '¥' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+        function fmtInt(n) { return '¥' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+        function calcMonthlyTax(taxableIncome) {
+            // 按月计算（简化版，实际按年累计预扣）
+            var yearlyTaxable = taxableIncome * 12;
+            var yearlyTax = 0;
+            for (var i = 0; i < TAX_BRACKETS.length; i++) {
+                var b = TAX_BRACKETS[i];
+                if (yearlyTaxable > b.min) {
+                    var taxable = Math.min(yearlyTaxable, b.max) - b.min;
+                    yearlyTax += taxable * b.rate;
+                }
+            }
+            return yearlyTax / 12;
+        }
+
+        function getEffectiveRate(taxableIncome) {
+            var yearlyTaxable = taxableIncome * 12;
+            if (yearlyTaxable <= 0) return 0;
+            var yearlyTax = 0;
+            for (var i = 0; i < TAX_BRACKETS.length; i++) {
+                var b = TAX_BRACKETS[i];
+                if (yearlyTaxable > b.min) {
+                    yearlyTax += (Math.min(yearlyTaxable, b.max) - b.min) * b.rate;
+                }
+            }
+            return yearlyTax / yearlyTaxable;
+        }
+
+        function calculate() {
+            var salary = parseFloat(document.getElementById('salary').value);
+            var insurance = parseFloat(document.getElementById('insurance').value) || 0;
+            var special = parseFloat(document.getElementById('special').value) || 0;
+            if (!salary) { alert('请输入税前月薪'); return; }
+
+            var taxableIncome = Math.max(0, salary - THRESHOLD - insurance - special);
+            var monthlyTax = calcMonthlyTax(taxableIncome);
+            var takeHome = salary - insurance - monthlyTax;
+            var effectiveRate = getEffectiveRate(taxableIncome);
+
+            document.getElementById('takeHome').textContent = fmt(takeHome);
+            document.getElementById('taxAmount').textContent = fmt(monthlyTax);
+
+            var details =
+                '<div class="detail-item"><div class="val">' + fmtInt(salary) + '</div><div class="lbl">税前工资</div></div>' +
+                '<div class="detail-item"><div class="val">' + fmtInt(THRESHOLD) + '</div><div class="lbl">起征点</div></div>' +
+                '<div class="detail-item"><div class="val">' + fmtInt(insurance) + '</div><div class="lbl">五险一金</div></div>' +
+                '<div class="detail-item"><div class="val">' + fmtInt(special) + '</div><div class="lbl">专项附加</div></div>' +
+                '<div class="detail-item"><div class="val">' + fmtInt(taxableIncome) + '</div><div class="lbl">应纳税所得</div></div>' +
+                '<div class="detail-item"><div class="val">' + (effectiveRate * 100).toFixed(2) + '%</div><div class="lbl">实际税率</div></div>';
+            document.getElementById('resultDetails').innerHTML = details;
+
+            document.getElementById('yearSalary').textContent = fmtInt(salary * 12);
+            document.getElementById('yearTax').textContent = fmtInt(monthlyTax * 12);
+            document.getElementById('yearTakeHome').textContent = fmtInt(takeHome * 12);
+            document.getElementById('taxRate').textContent = (effectiveRate * 100).toFixed(2) + '%';
+
+            document.getElementById('resultBox').classList.add('show');
+        }
+
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
+    </script>
+</body>
+</html>

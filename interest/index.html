@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>利息计算器 — 单利/复利/等额本息 在线计算</title>
+    <meta name="description" content="免费在线利息计算器，支持单利、复利、等额本息三种计算方式，自动生成还款计划明细表。">
+    <meta name="keywords" content="利息计算器,复利计算器,等额本息计算器,单利计算器">
+    <link rel="canonical" href="https://countin1.github.io/interest-calculator/interest/">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <a href="../" class="back-link">&larr; 返回计算器大全</a>
+    <div class="container">
+        <h1>&#x1f4b0; 利息计算器</h1>
+        <p class="subtitle">支持单利、复利、等额本息等多种计算方式</p>
+
+        <div class="tabs">
+            <div class="tab active" data-mode="simple" onclick="switchTab(this)">单利</div>
+            <div class="tab" data-mode="compound" onclick="switchTab(this)">复利</div>
+            <div class="tab" data-mode="equal" onclick="switchTab(this)">等额本息</div>
+        </div>
+
+        <div class="form-group">
+            <label>本金（元）</label>
+            <input type="number" id="principal" placeholder="请输入本金" min="0" step="any">
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>年利率（%）</label>
+                <input type="number" id="rate" placeholder="如 3.5" min="0" step="any">
+            </div>
+            <div class="form-group">
+                <label>期限</label>
+                <input type="number" id="period" placeholder="如 3" min="1" step="1">
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>期限单位</label>
+                <select id="periodUnit">
+                    <option value="year">年</option>
+                    <option value="month">月</option>
+                    <option value="day">天</option>
+                </select>
+            </div>
+            <div class="form-group" id="compoundFreqGroup">
+                <label>复利频率</label>
+                <select id="compoundFreq">
+                    <option value="1">每年</option>
+                    <option value="2">每半年</option>
+                    <option value="4">每季度</option>
+                    <option value="12">每月</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn" onclick="calculate()">计算利息</button>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-title">计算结果</div>
+            <div class="result-main">
+                <div>
+                    <div class="label" id="resultLabel">利息总额</div>
+                    <div class="amount" id="resultAmount">&#xa5;0.00</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="label">到期总额</div>
+                    <div class="amount" id="resultTotal" style="font-size:22px;color:#764ba2">&#xa5;0.00</div>
+                </div>
+            </div>
+            <div class="result-details" id="resultDetails"></div>
+            <div class="schedule-toggle" id="scheduleToggle" style="display:none">
+                <a onclick="toggleSchedule()">&#x1f4ca; 查看还款计划明细 &#x25bc;</a>
+            </div>
+            <div class="schedule-table" id="scheduleTable"></div>
+        </div>
+    </div>
+
+    <script>
+        var currentMode = 'simple';
+        function switchTab(el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            currentMode = el.dataset.mode;
+            document.getElementById('compoundFreqGroup').style.display = currentMode === 'compound' ? '' : 'none';
+            document.getElementById('resultBox').classList.remove('show');
+        }
+        function getYears() {
+            var p = parseFloat(document.getElementById('period').value);
+            var u = document.getElementById('periodUnit').value;
+            return u === 'year' ? p : u === 'month' ? p/12 : p/365;
+        }
+        function fmt(n) { return '¥' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+        function calculate() {
+            var principal = parseFloat(document.getElementById('principal').value);
+            var annualRate = parseFloat(document.getElementById('rate').value) / 100;
+            var years = getYears();
+            var period = parseFloat(document.getElementById('period').value);
+            if (!principal || !annualRate || !period) { alert('请填写完整信息'); return; }
+
+            var interest, total, details = '';
+
+            if (currentMode === 'simple') {
+                interest = principal * annualRate * years;
+                total = principal + interest;
+                details =
+                    '<div class="detail-item"><div class="val">' + (annualRate*100).toFixed(2) + '%</div><div class="lbl">年利率</div></div>' +
+                    '<div class="detail-item"><div class="val">' + years.toFixed(2) + ' 年</div><div class="lbl">实际期限</div></div>' +
+                    '<div class="detail-item"><div class="val">' + fmt(interest/years||0) + '</div><div class="lbl">年利息</div></div>' +
+                    '<div class="detail-item"><div class="val">' + fmt(interest/(years*12)||0) + '</div><div class="lbl">月利息</div></div>';
+                document.getElementById('resultLabel').textContent = '利息总额';
+                document.getElementById('scheduleToggle').style.display = 'none';
+                document.getElementById('scheduleTable').classList.remove('show');
+            } else if (currentMode === 'compound') {
+                var n = parseInt(document.getElementById('compoundFreq').value);
+                total = principal * Math.pow(1 + annualRate/n, n*years);
+                interest = total - principal;
+                var freqNames = {1:'每年',2:'每半年',4:'每季度',12:'每月'};
+                details =
+                    '<div class="detail-item"><div class="val">' + (annualRate*100).toFixed(2) + '%</div><div class="lbl">年利率</div></div>' +
+                    '<div class="detail-item"><div class="val">' + freqNames[n] + '</div><div class="lbl">复利频率</div></div>' +
+                    '<div class="detail-item"><div class="val">' + years.toFixed(2) + ' 年</div><div class="lbl">实际期限</div></div>' +
+                    '<div class="detail-item"><div class="val">' + (Math.pow(1+annualRate/n,n)*100-100).toFixed(4) + '%</div><div class="lbl">实际年化</div></div>';
+                document.getElementById('resultLabel').textContent = '利息总额';
+                document.getElementById('scheduleToggle').style.display = 'none';
+                document.getElementById('scheduleTable').classList.remove('show');
+            } else {
+                var unit = document.getElementById('periodUnit').value;
+                var totalMonths = unit==='year'?period*12:unit==='month'?period:period/30;
+                var mr = annualRate/12;
+                var m = Math.round(totalMonths);
+                var mp = mr===0 ? principal/m : principal*mr*Math.pow(1+mr,m)/(Math.pow(1+mr,m)-1);
+                total = mp * m;
+                interest = total - principal;
+                var rows = '', remain = principal;
+                for (var i = 1; i <= m; i++) {
+                    var ip = remain * mr, pp = mp - ip;
+                    remain = Math.max(0, remain - pp);
+                    rows += '<tr><td>'+i+'</td><td>'+fmt(mp)+'</td><td>'+fmt(ip)+'</td><td>'+fmt(pp)+'</td><td>'+fmt(remain)+'</td></tr>';
+                }
+                document.getElementById('scheduleTable').innerHTML = '<table><thead><tr><th>期数</th><th>月供</th><th>利息</th><th>本金</th><th>剩余本金</th></tr></thead><tbody>'+rows+'</tbody></table>';
+                details =
+                    '<div class="detail-item"><div class="val">'+fmt(mp)+'</div><div class="lbl">每月还款</div></div>' +
+                    '<div class="detail-item"><div class="val">'+m+' 期</div><div class="lbl">还款期数</div></div>' +
+                    '<div class="detail-item"><div class="val">'+fmt(interest)+'</div><div class="lbl">总利息</div></div>' +
+                    '<div class="detail-item"><div class="val">'+(interest/principal*100).toFixed(2)+'%</div><div class="lbl">利息占比</div></div>';
+                document.getElementById('resultLabel').textContent = '总利息';
+                document.getElementById('scheduleToggle').style.display = '';
+            }
+
+            document.getElementById('resultAmount').textContent = fmt(interest);
+            document.getElementById('resultTotal').textContent = fmt(total);
+            document.getElementById('resultDetails').innerHTML = details;
+            document.getElementById('resultBox').classList.add('show');
+        }
+
+        function toggleSchedule() {
+            var t = document.getElementById('scheduleTable'), a = document.querySelector('.schedule-toggle a');
+            t.classList.toggle('show');
+            a.textContent = t.classList.contains('show') ? '\u{1f4ca} 收起还款计划 ▲' : '\u{1f4ca} 查看还款计划明细 ▼';
+        }
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
+    </script>
+</body>
+</html>

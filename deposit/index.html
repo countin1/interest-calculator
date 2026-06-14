@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>存款利率对比 — 各银行定期存款利率/收益 在线计算</title>
+    <meta name="description" content="免费在线存款利率对比工具，对比各大银行定期存款利率，计算存款收益。支持活期、3个月、6个月、1年、2年、3年、5年各期限。">
+    <meta name="keywords" content="存款利率,银行利率,定期存款利率,存款收益计算器,银行利率对比,大额存单利率">
+    <link rel="canonical" href="https://countin1.github.io/interest-calculator/deposit/">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .bank-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+        .bank-table th { background: #667eea; color: white; padding: 8px 6px; text-align: center; }
+        .bank-table td { padding: 8px 6px; border-bottom: 1px solid #eee; text-align: center; }
+        .bank-table tr:hover td { background: #f8f9ff; }
+        .bank-table .best { background: #e8f5e9; font-weight: 700; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <a href="../" class="back-link">&larr; 返回计算器大全</a>
+    <div class="container" style="max-width:680px">
+        <h1>&#x1f3e6; 存款利率对比</h1>
+        <p class="subtitle">各大银行定期存款利率对比 + 收益计算</p>
+
+        <div class="form-group">
+            <label>存款金额（万元）</label>
+            <input type="number" id="amount" placeholder="如 10" min="0" step="1" value="10">
+        </div>
+
+        <button class="btn" onclick="calculate()">对比收益</button>
+
+        <div class="result-box" id="resultBox" style="display:block;margin-top:24px">
+            <div class="result-title">2024年主要银行定期存款利率（%）</div>
+            <table class="bank-table" id="rateTable">
+                <thead>
+                    <tr>
+                        <th>银行</th>
+                        <th>活期</th>
+                        <th>3个月</th>
+                        <th>6个月</th>
+                        <th>1年</th>
+                        <th>2年</th>
+                        <th>3年</th>
+                        <th>5年</th>
+                    </tr>
+                </thead>
+                <tbody id="rateBody"></tbody>
+            </table>
+        </div>
+
+        <div class="result-box" id="incomeBox" style="display:none">
+            <div class="result-title">存款收益对比（按您输入的金额）</div>
+            <table class="bank-table" id="incomeTable">
+                <thead>
+                    <tr>
+                        <th>期限</th>
+                        <th>利率</th>
+                        <th>利息收入</th>
+                        <th>到期总额</th>
+                    </tr>
+                </thead>
+                <tbody id="incomeBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 2024年各大银行存款利率（近似值，实际以银行公布为准）
+        var BANKS = [
+            { name: '工商银行', rates: [0.20, 1.15, 1.35, 1.45, 1.65, 1.95, 2.00] },
+            { name: '建设银行', rates: [0.20, 1.15, 1.35, 1.45, 1.65, 1.95, 2.00] },
+            { name: '农业银行', rates: [0.20, 1.15, 1.35, 1.45, 1.65, 1.95, 2.00] },
+            { name: '中国银行', rates: [0.20, 1.15, 1.35, 1.45, 1.65, 1.95, 2.00] },
+            { name: '交通银行', rates: [0.20, 1.15, 1.35, 1.45, 1.65, 1.95, 2.00] },
+            { name: '招商银行', rates: [0.20, 1.15, 1.35, 1.45, 1.65, 1.95, 2.00] },
+            { name: '邮储银行', rates: [0.20, 1.15, 1.36, 1.48, 1.68, 1.96, 2.00] },
+            { name: '兴业银行', rates: [0.20, 1.20, 1.40, 1.55, 1.75, 2.00, 2.05] },
+            { name: '浦发银行', rates: [0.20, 1.20, 1.40, 1.55, 1.65, 1.95, 2.00] },
+        ];
+        var PERIODS = ['活期', '3个月', '6个月', '1年', '2年', '3年', '5年'];
+        var PERIOD_YEARS = [0, 0.25, 0.5, 1, 2, 3, 5];
+
+        function fmt(n) { return '¥' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+        function init() {
+            var tbody = document.getElementById('rateBody');
+            var bestRates = [];
+            for (var p = 0; p < 7; p++) {
+                var max = 0;
+                for (var b = 0; b < BANKS.length; b++) {
+                    if (BANKS[b].rates[p] > max) max = BANKS[b].rates[p];
+                }
+                bestRates.push(max);
+            }
+
+            var html = '';
+            for (var b = 0; b < BANKS.length; b++) {
+                html += '<tr><td style="text-align:left;font-weight:600">' + BANKS[b].name + '</td>';
+                for (var p = 0; p < 7; p++) {
+                    var cls = BANKS[b].rates[p] === bestRates[p] ? ' class="best"' : '';
+                    html += '<td' + cls + '>' + BANKS[b].rates[p].toFixed(2) + '</td>';
+                }
+                html += '</tr>';
+            }
+            tbody.innerHTML = html;
+        }
+
+        function calculate() {
+            var amount = parseFloat(document.getElementById('amount').value);
+            if (!amount) { alert('请输入存款金额'); return; }
+            var principal = amount * 10000;
+
+            // 用最高利率计算各期限收益
+            var bestRates = [];
+            for (var p = 0; p < 7; p++) {
+                var max = 0;
+                for (var b = 0; b < BANKS.length; b++) {
+                    if (BANKS[b].rates[p] > max) max = BANKS[b].rates[p];
+                }
+                bestRates.push(max);
+            }
+
+            var html = '';
+            var periods = [
+                { name: '活期（1年）', idx: 0, years: 1 },
+                { name: '3个月定期', idx: 1, years: 0.25 },
+                { name: '6个月定期', idx: 2, years: 0.5 },
+                { name: '1年定期', idx: 3, years: 1 },
+                { name: '2年定期', idx: 4, years: 2 },
+                { name: '3年定期', idx: 5, years: 3 },
+                { name: '5年定期', idx: 6, years: 5 },
+            ];
+
+            for (var i = 0; i < periods.length; i++) {
+                var p = periods[i];
+                var rate = bestRates[p.idx] / 100;
+                var interest = principal * rate * p.years;
+                var total = principal + interest;
+                html += '<tr><td style="text-align:left">' + p.name + '</td>' +
+                    '<td>' + bestRates[p.idx].toFixed(2) + '%</td>' +
+                    '<td>' + fmt(interest) + '</td>' +
+                    '<td>' + fmt(total) + '</td></tr>';
+            }
+            document.getElementById('incomeBody').innerHTML = html;
+            document.getElementById('incomeBox').style.display = 'block';
+        }
+
+        init();
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
+    </script>
+</body>
+</html>

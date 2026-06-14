@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车贷计算器 — 汽车贷款月供/利息 在线计算</title>
+    <meta name="description" content="免费在线车贷计算器，计算汽车贷款月供、总利息和还款计划。支持自定义首付比例和贷款期限。">
+    <meta name="keywords" content="车贷计算器,汽车贷款计算器,车贷月供,车贷利息,购车贷款">
+    <link rel="canonical" href="https://countin1.github.io/interest-calculator/car-loan/">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <a href="../" class="back-link">&larr; 返回计算器大全</a>
+    <div class="container">
+        <h1>&#x1f697; 车贷计算器</h1>
+        <p class="subtitle">计算汽车贷款月供、利息和还款计划</p>
+
+        <div class="form-group">
+            <label>车辆总价（万元）</label>
+            <input type="number" id="price" placeholder="如 15" min="0" step="any">
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>首付比例（%）</label>
+                <select id="downPercent">
+                    <option value="0">0%（零首付）</option>
+                    <option value="20">20%</option>
+                    <option value="30" selected>30%</option>
+                    <option value="50">50%</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>年利率（%）</label>
+                <input type="number" id="rate" placeholder="如 4.5" min="0" step="any" value="4.5">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>贷款期限</label>
+            <select id="term">
+                <option value="1">1 年</option>
+                <option value="2">2 年</option>
+                <option value="3" selected>3 年</option>
+                <option value="5">5 年</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="calculate()">计算月供</button>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-title">计算结果</div>
+            <div class="result-main">
+                <div>
+                    <div class="label">每月还款</div>
+                    <div class="amount" id="monthlyAmount">¥0.00</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="label">总利息</div>
+                    <div class="amount" id="totalInterest" style="font-size:22px;color:#764ba2">¥0.00</div>
+                </div>
+            </div>
+            <div class="result-details" id="resultDetails"></div>
+            <div class="schedule-toggle" id="scheduleToggle" style="display:none">
+                <a onclick="toggleSchedule()">&#x1f4ca; 查看还款计划明细 &#x25bc;</a>
+            </div>
+            <div class="schedule-table" id="scheduleTable"></div>
+        </div>
+    </div>
+
+    <script>
+        function fmt(n) { return '¥' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+        function calculate() {
+            var price = parseFloat(document.getElementById('price').value) * 10000;
+            var downPct = parseInt(document.getElementById('downPercent').value) / 100;
+            var annualRate = parseFloat(document.getElementById('rate').value) / 100;
+            var years = parseInt(document.getElementById('term').value);
+            if (!price || !annualRate) { alert('请填写完整信息'); return; }
+
+            var downPayment = price * downPct;
+            var loan = price - downPayment;
+            var months = years * 12;
+            var mr = annualRate / 12;
+            var mp = mr === 0 ? loan/months : loan*mr*Math.pow(1+mr,months)/(Math.pow(1+mr,months)-1);
+            var total = mp * months;
+            var interest = total - loan;
+
+            document.getElementById('monthlyAmount').textContent = fmt(mp);
+            document.getElementById('totalInterest').textContent = fmt(interest);
+
+            var details =
+                '<div class="detail-item"><div class="val">' + fmt(downPayment) + '</div><div class="lbl">首付金额</div></div>' +
+                '<div class="detail-item"><div class="val">' + fmt(loan) + '</div><div class="lbl">贷款金额</div></div>' +
+                '<div class="detail-item"><div class="val">' + fmt(interest) + '</div><div class="lbl">总利息</div></div>' +
+                '<div class="detail-item"><div class="val">' + fmt(total + downPayment) + '</div><div class="lbl">购车总成本</div></div>';
+            document.getElementById('resultDetails').innerHTML = details;
+
+            var rows = '', remain = loan;
+            for (var i = 1; i <= months; i++) {
+                var ip = remain * mr;
+                var pp = mp - ip;
+                remain = Math.max(0, remain - pp);
+                rows += '<tr><td>' + i + '</td><td>' + fmt(mp) + '</td><td>' + fmt(ip) + '</td><td>' + fmt(pp) + '</td><td>' + fmt(remain) + '</td></tr>';
+            }
+            document.getElementById('scheduleTable').innerHTML =
+                '<table><thead><tr><th>期数</th><th>月供</th><th>利息</th><th>本金</th><th>剩余本金</th></tr></thead><tbody>' + rows + '</tbody></table>';
+            document.getElementById('scheduleToggle').style.display = '';
+            document.getElementById('resultBox').classList.add('show');
+        }
+
+        function toggleSchedule() {
+            var t = document.getElementById('scheduleTable'), a = document.querySelector('.schedule-toggle a');
+            t.classList.toggle('show');
+            a.textContent = t.classList.contains('show') ? '\u{1f4ca} 收起还款计划 ▲' : '\u{1f4ca} 查看还款计划明细 ▼';
+        }
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
+    </script>
+</body>
+</html>

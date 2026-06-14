@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房贷计算器 — 等额本息/等额本金 在线计算</title>
+    <meta name="description" content="免费在线房贷计算器，支持等额本息和等额本金两种还款方式，自动生成每月还款明细表。输入贷款金额、利率、期限即可计算月供和总利息。">
+    <meta name="keywords" content="房贷计算器,等额本息计算器,等额本金计算器,月供计算器,房贷利率,还款计算器">
+    <link rel="canonical" href="https://countin1.github.io/interest-calculator/mortgage/">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <a href="../" class="back-link">&larr; 返回计算器大全</a>
+    <div class="container">
+        <h1>&#x1f3e0; 房贷计算器</h1>
+        <p class="subtitle">等额本息 / 等额本金 对比计算</p>
+
+        <div class="tabs">
+            <div class="tab active" data-mode="equal" onclick="switchTab(this)">等额本息</div>
+            <div class="tab" data-mode="principal" onclick="switchTab(this)">等额本金</div>
+            <div class="tab" data-mode="compare" onclick="switchTab(this)">两者对比</div>
+        </div>
+
+        <div class="form-group">
+            <label>贷款总额（万元）</label>
+            <input type="number" id="amount" placeholder="如 100" min="0" step="any">
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>年利率（%）</label>
+                <input type="number" id="rate" placeholder="如 3.5" min="0" step="any" value="3.5">
+            </div>
+            <div class="form-group">
+                <label>贷款期限（年）</label>
+                <input type="number" id="years" placeholder="如 30" min="1" max="30" step="1" value="30">
+            </div>
+        </div>
+
+        <button class="btn" onclick="calculate()">计算月供</button>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-title">计算结果</div>
+            <div class="result-main">
+                <div>
+                    <div class="label" id="monthlyLabel">每月还款</div>
+                    <div class="amount" id="monthlyAmount">¥0.00</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="label">总利息</div>
+                    <div class="amount" id="totalInterest" style="font-size:22px;color:#764ba2">¥0.00</div>
+                </div>
+            </div>
+            <div class="result-details" id="resultDetails"></div>
+            <div class="schedule-toggle" id="scheduleToggle" style="display:none">
+                <a onclick="toggleSchedule()">&#x1f4ca; 查看还款计划明细 &#x25bc;</a>
+            </div>
+            <div class="schedule-table" id="scheduleTable"></div>
+        </div>
+    </div>
+
+    <script>
+        let mode = 'equal';
+
+        function switchTab(el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            mode = el.dataset.mode;
+            document.getElementById('resultBox').classList.remove('show');
+        }
+
+        function fmt(n) {
+            return '¥' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function calculate() {
+            var totalWan = parseFloat(document.getElementById('amount').value);
+            var annualRate = parseFloat(document.getElementById('rate').value) / 100;
+            var years = parseInt(document.getElementById('years').value);
+            if (!totalWan || !annualRate || !years) { alert('请填写完整信息'); return; }
+
+            var principal = totalWan * 10000;
+            var months = years * 12;
+            var mr = annualRate / 12;
+
+            if (mode === 'compare') {
+                // 等额本息
+                var eqMp = mr === 0 ? principal/months : principal*mr*Math.pow(1+mr,months)/(Math.pow(1+mr,months)-1);
+                var eqTotal = eqMp * months;
+                var eqInterest = eqTotal - principal;
+
+                // 等额本金
+                var ppMp = principal / months;
+                var firstMp = ppMp + principal * mr;
+                var lastMp = ppMp + ppMp * mr;
+                var ppTotal = months * ppMp + principal * mr * (months + 1) / 2;
+                var ppInterest = ppTotal - principal;
+
+                document.getElementById('monthlyLabel').textContent = '等额本息月供';
+                document.getElementById('monthlyAmount').textContent = fmt(eqMp);
+                document.getElementById('totalInterest').textContent = fmt(eqInterest);
+
+                var details =
+                    '<div class="detail-item"><div class="val">' + fmt(eqMp) + '</div><div class="lbl">等额本息月供</div></div>' +
+                    '<div class="detail-item"><div class="val">' + fmt(eqInterest) + '</div><div class="lbl">等额本息总利息</div></div>' +
+                    '<div class="detail-item"><div class="val">' + fmt(firstMp) + '</div><div class="lbl">等额本金首月</div></div>' +
+                    '<div class="detail-item"><div class="val">' + fmt(ppInterest) + '</div><div class="lbl">等额本金总利息</div></div>' +
+                    '<div class="detail-item"><div class="val">' + fmt(eqInterest - ppInterest) + '</div><div class="lbl">利息差额</div></div>' +
+                    '<div class="detail-item"><div class="val">' + (eqInterest > ppInterest ? '等额本金更省' : '等额本息更省') + '</div><div class="lbl">结论</div></div>';
+                document.getElementById('resultDetails').innerHTML = details;
+                document.getElementById('scheduleToggle').style.display = 'none';
+                document.getElementById('scheduleTable').classList.remove('show');
+
+                // 显示对比表
+                var rows = '', eqRemain = principal, ppRemain = principal;
+                for (var i = 1; i <= Math.min(months, 120); i++) {
+                    var eqIp = eqRemain * mr;
+                    var eqPp = eqMp - eqIp;
+                    eqRemain = Math.max(0, eqRemain - eqPp);
+
+                    var ppPp = principal / months;
+                    var ppIp = ppRemain * mr;
+                    ppRemain = Math.max(0, ppRemain - ppPp);
+
+                    rows += '<tr><td>' + i + '</td><td>' + fmt(eqMp) + '</td><td>' + fmt(eqIp) + '</td>' +
+                            '<td>' + fmt(ppPp + ppIp) + '</td><td>' + fmt(ppIp) + '</td></tr>';
+                }
+                document.getElementById('scheduleTable').innerHTML =
+                    '<table><thead><tr><th>期数</th><th>本息月供</th><th>本息利息</th><th>本金月供</th><th>本金利息</th></tr></thead><tbody>' + rows + '</tbody></table>';
+                document.getElementById('scheduleToggle').style.display = '';
+                document.getElementById('scheduleToggle').querySelector('a').textContent = '\u{1f4ca} 查看前120期对比明细 ▼';
+
+            } else if (mode === 'equal') {
+                // 等额本息
+                var mp = mr === 0 ? principal/months : principal*mr*Math.pow(1+mr,months)/(Math.pow(1+mr,months)-1);
+                var total = mp * months;
+                var interest = total - principal;
+
+                document.getElementById('monthlyLabel').textContent = '每月还款';
+                document.getElementById('monthlyAmount').textContent = fmt(mp);
+                document.getElementById('totalInterest').textContent = fmt(interest);
+
+                var details =
+                    '<div class="detail-item"><div class="val">' + fmt(mp) + '</div><div class="lbl">每月还款</div></div>' +
+                    '<div class="detail-item"><div class="val">' + months + ' 期</div><div class="lbl">还款期数</div></div>' +
+                    '<div class="detail-item"><div class="val">' + fmt(interest) + '</div><div class="lbl">总利息</div></div>' +
+                    '<div class="detail-item"><div class="val">' + (interest/principal*100).toFixed(2) + '%</div><div class="lbl">利息占比</div></div>';
+                document.getElementById('resultDetails').innerHTML = details;
+
+                var rows = '', remain = principal;
+                for (var i = 1; i <= months; i++) {
+                    var ip = remain * mr;
+                    var pp = mp - ip;
+                    remain = Math.max(0, remain - pp);
+                    rows += '<tr><td>' + i + '</td><td>' + fmt(mp) + '</td><td>' + fmt(ip) + '</td><td>' + fmt(pp) + '</td><td>' + fmt(remain) + '</td></tr>';
+                }
+                document.getElementById('scheduleTable').innerHTML =
+                    '<table><thead><tr><th>期数</th><th>月供</th><th>利息</th><th>本金</th><th>剩余本金</th></tr></thead><tbody>' + rows + '</tbody></table>';
+                document.getElementById('scheduleToggle').style.display = '';
+
+            } else {
+                // 等额本金
+                var ppMonth = principal / months;
+                var firstMonth = ppMonth + principal * mr;
+                var lastMonth = ppMonth + ppMonth * mr;
+                var totalPay = months * ppMonth + principal * mr * (months + 1) / 2;
+                var interest = totalPay - principal;
+
+                document.getElementById('monthlyLabel').textContent = '首月还款';
+                document.getElementById('monthlyAmount').textContent = fmt(firstMonth);
+                document.getElementById('totalInterest').textContent = fmt(interest);
+
+                var details =
+                    '<div class="detail-item"><div class="val">' + fmt(firstMonth) + '</div><div class="lbl">首月还款</div></div>' +
+                    '<div class="detail-item"><div class="val">' + fmt(lastMonth) + '</div><div class="lbl">末月还款</div></div>' +
+                    '<div class="detail-item"><div class="val">' + fmt(interest) + '</div><div class="lbl">总利息</div></div>' +
+                    '<div class="detail-item"><div class="val">' + (interest/principal*100).toFixed(2) + '%</div><div class="lbl">利息占比</div></div>';
+                document.getElementById('resultDetails').innerHTML = details;
+
+                var rows = '', remain = principal;
+                for (var i = 1; i <= months; i++) {
+                    var ip = remain * mr;
+                    remain = Math.max(0, remain - ppMonth);
+                    rows += '<tr><td>' + i + '</td><td>' + fmt(ppMonth + ip) + '</td><td>' + fmt(ip) + '</td><td>' + fmt(ppMonth) + '</td><td>' + fmt(remain) + '</td></tr>';
+                }
+                document.getElementById('scheduleTable').innerHTML =
+                    '<table><thead><tr><th>期数</th><th>月供</th><th>利息</th><th>本金</th><th>剩余本金</th></tr></thead><tbody>' + rows + '</tbody></table>';
+                document.getElementById('scheduleToggle').style.display = '';
+            }
+
+            document.getElementById('resultBox').classList.add('show');
+        }
+
+        function toggleSchedule() {
+            var table = document.getElementById('scheduleTable');
+            var toggle = document.querySelector('.schedule-toggle a');
+            table.classList.toggle('show');
+            if (table.classList.contains('show')) {
+                toggle.textContent = toggle.textContent.replace('▼', '▲').replace('查看', '收起');
+            } else {
+                toggle.textContent = toggle.textContent.replace('▲', '▼').replace('收起', '查看');
+            }
+        }
+
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
+    </script>
+</body>
+</html>
