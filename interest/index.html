@@ -22,22 +22,22 @@
         </div>
 
         <div class="form-group">
-            <label>本金（元）</label>
+            <label for="principal">本金（元）</label>
             <input type="number" id="principal" placeholder="请输入本金" min="0" step="any">
         </div>
         <div class="row">
             <div class="form-group">
-                <label>年利率（%）</label>
+                <label for="rate">年利率（%）</label>
                 <input type="number" id="rate" placeholder="如 3.5" min="0" step="any">
             </div>
             <div class="form-group">
-                <label>期限</label>
+                <label for="period">期限</label>
                 <input type="number" id="period" placeholder="如 3" min="1" step="1">
             </div>
         </div>
         <div class="row">
             <div class="form-group">
-                <label>期限单位</label>
+                <label for="periodUnit">期限单位</label>
                 <select id="periodUnit">
                     <option value="year">年</option>
                     <option value="month">月</option>
@@ -45,7 +45,7 @@
                 </select>
             </div>
             <div class="form-group" id="compoundFreqGroup">
-                <label>复利频率</label>
+                <label for="compoundFreq">复利频率</label>
                 <select id="compoundFreq">
                     <option value="1">每年</option>
                     <option value="2">每半年</option>
@@ -98,7 +98,7 @@
             var annualRate = parseFloat(document.getElementById('rate').value) / 100;
             var years = getYears();
             var period = parseFloat(document.getElementById('period').value);
-            if (!principal || !annualRate || !period) { alert('请填写完整信息'); return; }
+            if (isNaN(principal) || isNaN(annualRate) || isNaN(period)) { alert('请填写完整信息'); return; }
 
             var interest, total, details = '';
 
@@ -128,7 +128,7 @@
                 document.getElementById('scheduleTable').classList.remove('show');
             } else {
                 var unit = document.getElementById('periodUnit').value;
-                var totalMonths = unit==='year'?period*12:unit==='month'?period:period/30;
+                var totalMonths = unit==='year'?period*12:unit==='month'?period:period/30.4167;
                 var mr = annualRate/12;
                 var m = Math.round(totalMonths);
                 var mp = mr===0 ? principal/m : principal*mr*Math.pow(1+mr,m)/(Math.pow(1+mr,m)-1);

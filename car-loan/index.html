@@ -16,12 +16,12 @@
         <p class="subtitle">计算汽车贷款月供、利息和还款计划</p>
 
         <div class="form-group">
-            <label>车辆总价（万元）</label>
+            <label for="price">车辆总价（万元）</label>
             <input type="number" id="price" placeholder="如 15" min="0" step="any">
         </div>
         <div class="row">
             <div class="form-group">
-                <label>首付比例（%）</label>
+                <label for="downPercent">首付比例（%）</label>
                 <select id="downPercent">
                     <option value="0">0%（零首付）</option>
                     <option value="20">20%</option>
@@ -30,12 +30,12 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>年利率（%）</label>
+                <label for="rate">年利率（%）</label>
                 <input type="number" id="rate" placeholder="如 4.5" min="0" step="any" value="4.5">
             </div>
         </div>
         <div class="form-group">
-            <label>贷款期限</label>
+            <label for="term">贷款期限</label>
             <select id="term">
                 <option value="1">1 年</option>
                 <option value="2">2 年</option>
@@ -74,7 +74,7 @@
             var downPct = parseInt(document.getElementById('downPercent').value) / 100;
             var annualRate = parseFloat(document.getElementById('rate').value) / 100;
             var years = parseInt(document.getElementById('term').value);
-            if (!price || !annualRate) { alert('请填写完整信息'); return; }
+            if (isNaN(price) || isNaN(annualRate)) { alert('请填写完整信息'); return; }
 
             var downPayment = price * downPct;
             var loan = price - downPayment;
